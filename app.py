@@ -1,8 +1,18 @@
 import streamlit as st
 from Bio import Entrez
+import google.generativeai as genai
 
-# PubMed setup
-Entrez.email = "scientistsofthegambia@gmail.com"
+# Configuration
+#Entrez.email = "your_email@example.com"
+Entrez.email = st.secrets["PUBMED_EMAIL"]
+
+genai.configure(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
+
+model = genai.GenerativeModel(
+    "gemini-1.5-flash"
+)
 
 st.set_page_config(
     page_title="BioBrief AI",
@@ -11,7 +21,8 @@ st.set_page_config(
 )
 
 st.title("🧬 BioBrief AI")
-st.subheader("AI-powered Scientific Intelligence")
+st.subheader("AI Scientific Intelligence from PubMed")
+
 
 topic = st.text_input(
     "Enter a disease, drug, gene, or biomarker",
@@ -20,6 +31,7 @@ topic = st.text_input(
 
 
 def search_pubmed(query, max_results=5):
+
     handle = Entrez.esearch(
         db="pubmed",
         term=query,
@@ -32,11 +44,11 @@ def search_pubmed(query, max_results=5):
     return results["IdList"]
 
 
-def fetch_articles(pubmed_ids):
+def fetch_articles(ids):
 
     handle = Entrez.efetch(
         db="pubmed",
-        id=",".join(pubmed_ids),
+        id=",".join(ids),
         rettype="abstract",
         retmode="text"
     )
@@ -44,25 +56,56 @@ def fetch_articles(pubmed_ids):
     return handle.read()
 
 
-if st.button("Analyze Literature"):
+def summarize_science(text):
+
+    prompt = f"""
+You are a biotech scientific analyst.
+
+Analyze these PubMed abstracts.
+
+Create:
+
+1. Executive Summary
+2. Key Scientific Findings
+3. Important Biomarkers or Targets
+4. Therapeutic Implications
+5. Research Gaps
+
+Be concise and accurate.
+
+Literature:
+{text}
+"""
+
+    response = model.generate_content(prompt)
+
+    return response.text
+
+
+if st.button("Generate Scientific Brief"):
 
     if topic:
 
-        with st.spinner("Searching PubMed..."):
+        with st.spinner("Reading scientific literature..."):
 
-            papers = search_pubmed(topic)
+            ids = search_pubmed(topic)
 
-            abstracts = fetch_articles(papers)
+            abstracts = fetch_articles(ids)
+
+            summary = summarize_science(abstracts)
+
 
         st.success(
-            f"Found {len(papers)} scientific papers"
+            f"Analyzed {len(ids)} PubMed papers"
         )
 
-        st.text_area(
-            "PubMed Results",
-            abstracts,
-            height=500
-        )
+        st.markdown("## 🧠 Scientific Brief")
+
+        st.write(summary)
+
+
+        with st.expander("View Source Papers"):
+            st.text(abstracts)
 
     else:
-        st.warning("Please enter a topic")
+        st.warning("Enter a research topic")
