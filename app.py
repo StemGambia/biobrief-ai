@@ -11,7 +11,7 @@ genai.configure(
 )
 
 model = genai.GenerativeModel(
-    "gemini-1.5-flash"
+    "gemini-2.0-flash"
 )
 
 st.set_page_config(
