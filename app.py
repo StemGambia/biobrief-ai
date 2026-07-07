@@ -1,18 +1,11 @@
 import streamlit as st
 from Bio import Entrez
-import google.generativeai as genai
+from google import genai
 
+
+# -----------------------------
 # Configuration
-#Entrez.email = "your_email@example.com"
-Entrez.email = st.secrets["PUBMED_EMAIL"]
-
-genai.configure(
-    api_key=st.secrets["GEMINI_API_KEY"]
-)
-
-model = genai.GenerativeModel(
-    "gemini-1.5-flash"
-)
+# -----------------------------
 
 st.set_page_config(
     page_title="BioBrief AI",
@@ -20,15 +13,30 @@ st.set_page_config(
     layout="wide"
 )
 
+# Secrets
+Entrez.email = st.secrets["PUBMED_EMAIL"]
+
+client = genai.Client(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
+
+
+# -----------------------------
+# App Interface
+# -----------------------------
+
 st.title("🧬 BioBrief AI")
 st.subheader("AI Scientific Intelligence from PubMed")
-
 
 topic = st.text_input(
     "Enter a disease, drug, gene, or biomarker",
     placeholder="Example: GLP-1 obesity"
 )
 
+
+# -----------------------------
+# PubMed Functions
+# -----------------------------
 
 def search_pubmed(query, max_results=5):
 
@@ -44,11 +52,11 @@ def search_pubmed(query, max_results=5):
     return results["IdList"]
 
 
-def fetch_articles(ids):
+def fetch_articles(pubmed_ids):
 
     handle = Entrez.efetch(
         db="pubmed",
-        id=",".join(ids),
+        id=",".join(pubmed_ids),
         rettype="abstract",
         retmode="text"
     )
@@ -56,56 +64,84 @@ def fetch_articles(ids):
     return handle.read()
 
 
+# -----------------------------
+# Gemini Function
+# -----------------------------
+
 def summarize_science(text):
 
     prompt = f"""
-You are a biotech scientific analyst.
+You are an expert biotech scientific analyst.
 
-Analyze these PubMed abstracts.
+Analyze the PubMed abstracts below.
 
-Create:
+Create a concise scientific intelligence report with:
 
-1. Executive Summary
-2. Key Scientific Findings
-3. Important Biomarkers or Targets
-4. Therapeutic Implications
-5. Research Gaps
+## Executive Summary
+Summarize the most important discoveries.
 
-Be concise and accurate.
+## Key Scientific Findings
+List the major findings.
 
-Literature:
+## Biomarkers and Biological Targets
+Identify important genes, proteins, pathways, or biomarkers.
+
+## Therapeutic Implications
+Discuss drugs, treatments, or clinical relevance.
+
+## Research Gaps
+Identify unanswered questions and future opportunities.
+
+## Investment or R&D Signals
+Highlight emerging areas that biotech leaders should monitor.
+
+Use clear language suitable for biotech executives.
+
+PubMed Literature:
+
 {text}
 """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
 
     return response.text
 
+
+# -----------------------------
+# Main Workflow
+# -----------------------------
 
 if st.button("Generate Scientific Brief"):
 
     if topic:
 
-        with st.spinner("Reading scientific literature..."):
+        with st.spinner("Searching PubMed and analyzing literature..."):
 
-            ids = search_pubmed(topic)
+            pubmed_ids = search_pubmed(topic)
 
-            abstracts = fetch_articles(ids)
+            abstracts = fetch_articles(pubmed_ids)
 
-            summary = summarize_science(abstracts)
+            report = summarize_science(abstracts)
 
 
         st.success(
-            f"Analyzed {len(ids)} PubMed papers"
+            f"Analyzed {len(pubmed_ids)} PubMed publications"
         )
 
-        st.markdown("## 🧠 Scientific Brief")
+        st.markdown("## 🧠 BioBrief Scientific Report")
 
-        st.write(summary)
+        st.write(report)
 
 
-        with st.expander("View Source Papers"):
+        with st.expander("📄 View Source Abstracts"):
+
             st.text(abstracts)
 
     else:
-        st.warning("Enter a research topic")
+
+        st.warning(
+            "Please enter a research topic"
+        )
