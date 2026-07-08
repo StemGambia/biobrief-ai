@@ -1,0 +1,5 @@
+streamlit>=1.45.0
+google-genai>=1.20.0
+biopython>=1.85
+pandas>=2.2.2
+requests>=2.32.3
