@@ -96,6 +96,13 @@ Scientific Literature:
 # UI
 # ---------------------------------
 
+with st.sidebar:
+    st.header("🤖 Agent Activity")
+    st.write("🧠 Mission Controller")
+    st.write("📋 Planner")
+    st.write("🔍 Research Agent")
+    st.write("🧬 Scientific Analyst")
+
 st.title("🧬 BioBrief AI")
 
 st.caption(
