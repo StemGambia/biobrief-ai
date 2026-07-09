@@ -1,6 +1,7 @@
 import streamlit as st
 from Bio import Entrez
 from google import genai
+from agents.planner import create_plan
 
 # ---------------------------------
 # Configuration
@@ -30,16 +31,15 @@ def mission_controller(user_goal):
 
 
 def planner(mission):
-    return {
-        "queries": [
-            mission["mission"]
-        ]
-    }
+    return create_plan(
+        client,
+        mission["mission"]
+    )
 
 
 def researcher(plan):
 
-    query = plan["queries"][0]
+    query = plan["searches"][0]["query"]
 
     handle = Entrez.esearch(
         db="pubmed",
@@ -126,7 +126,11 @@ if st.button("Launch Mission"):
         progress.progress(20)
 
         st.write("📋 Planner")
+
         plan = planner(mission)
+
+        with st.expander("View Research Plan"):
+            st.json(plan)
 
         progress.progress(40)
 
