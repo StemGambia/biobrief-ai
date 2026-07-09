@@ -1,5 +1,7 @@
 # 🧬 BioBrief AI
 
+🚧 Current Development Branch: agent-v0.2
+
 BioBrief AI is an agentic Scientific Intelligence Platform that transforms biomedical literature into executive-ready research intelligence.
 
 ## Features
